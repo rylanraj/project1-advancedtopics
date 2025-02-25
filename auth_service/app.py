@@ -1,5 +1,5 @@
-from flask import Flask, request, jsonify, render_template, redirect
-from flask_jwt_extended import create_access_token, jwt_required, JWTManager
+from flask import Flask, request, jsonify, render_template, redirect, make_response
+from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 import pymysql
 import os
 from dotenv import load_dotenv
@@ -12,6 +12,11 @@ CORS(app)
 
 # Configure JWT
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "supersecretkey")
+
+app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']  # Accept JWT from both headers and cookies
+app.config['JWT_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Disable CSRF protection for now (optional)
+
 jwt = JWTManager(app)
 
 # MySQL connection
@@ -23,11 +28,29 @@ db = pymysql.connect(
     cursorclass=pymysql.cursors.DictCursor
 )
 
+
+@app.route("/")
+def home():
+    return jsonify({"message": "Auth Service is running! Available routes: /register, /login, /protected"})
+
+
 @app.route("/register", methods=["POST", "GET"])
 def register():
     if request.method == "GET":
-        return render_template("register.html")
-    data = request.json
+        return render_template("register.html")  # Serve the HTML form
+
+    print("Headers:", request.headers)  # Log request headers
+    print("Request data:", request.data)  # Log raw request data
+    print("Form data:", request.form)  # Log form data
+
+    # Check if request is from API (JSON) or from an HTML form (Form Data)
+    if request.is_json:
+        data = request.json
+        print("Detected JSON request")
+    else:
+        data = request.form  # Handles data from an HTML form
+        print("Detected Form request")
+
     username = data.get("username")
     password = data.get("password")
 
@@ -38,19 +61,21 @@ def register():
         with db.cursor() as cursor:
             cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
             db.commit()
-        return jsonify({"message": "User registered successfully"}), 201
+
+        if request.is_json:
+            return jsonify({"message": "User registered successfully"}), 201
+        else:
+            return redirect("/login")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
     if request.method == "GET":
         return render_template("login.html")
 
-    if request.is_json:
-        data = request.json
-    else:
-        data = request.form
+    data = request.json if request.is_json else request.form
     username = data.get("username")
     password = data.get("password")
 
@@ -60,21 +85,26 @@ def login():
     with db.cursor() as cursor:
         cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
         user = cursor.fetchone()
-        print(user)
 
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=username)
-    # Redirect to the enter_data service on port 5002, using the access token as an authorization header
-    return redirect(f"http://172.22.9.33/:5002/?id={user['id']}&token={access_token}")
+    print("User:", user)
+    print("User ID:", user.get("id"))
+    access_token = create_access_token(identity=str(user.get("id")))
+
+    response = jsonify({"token": access_token})  # Return token instead of redirecting
+    response.set_cookie("token", access_token, httponly=True, samesite="None", secure=False)
+
+    return response
 
 
 @app.route("/protected", methods=["GET"])
-@jwt_required()
+@jwt_required(locations=["cookies", "headers"])
 def protected():
-    return jsonify({"message": "Access granted"})
+    user = get_jwt_identity()
+    return jsonify({"message": "Access granted", "user": user})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
-

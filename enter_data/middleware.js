@@ -1,27 +1,34 @@
 const axios = require("axios");
 
-async function authenticateToken(req, res) {
-    const token = req.query.token;
-    const user_id = req.query.id;
-    const auth_service_url = "http://172.22.9.33:5001";
+async function authenticateToken(req, res, next) {
+    let token = req.cookies.token || req.cookies.access_token_cookie || req.query.token;
+    const AUTH_SERVICE_URL = "http://auth_service:5001";
+
+    console.log("Authenticating user... Token received:", token);
 
     if (!token) {
-        // Redirect user to login page
-        return res.redirect("http://172.22.9.33:5001/login");
+        console.log("No token found. Redirecting to login...");
+        return res.redirect("http://127.0.0.1:5001/login");
     }
 
     try {
-        const response = await axios.get(auth_service_url+"/protected", {
+        const response = await axios.get(`${AUTH_SERVICE_URL}/protected`, {
             headers: { Authorization: `Bearer ${token}` }
         });
+
         if (response.status === 200) {
-            // Save a cookie
-            res.cookie("user", { id: user_id, token: token }, { maxAge: 900000, httpOnly: true });
+            const user_id = response.data.user; // Extract user identity
+            console.log("Response Data:", response.data);
+            console.log("Token verified! Storing user in cookies. User ID:", user_id);
+
+            // ✅ Save user ID inside cookies
+            res.cookie("user", { id: Number(user_id), token: token }, { maxAge: 900000, httpOnly: true });
+
             return res.redirect("/");
         }
     } catch (error) {
-        console.log(error);
-        res.status(403).json({ error: "Forbidden" });
+        console.log("Authentication failed:", error.message);
+        return res.status(403).json({ error: "Forbidden" });
     }
 }
 

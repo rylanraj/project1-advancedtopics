@@ -8,7 +8,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 # Create a virtual environment and install dependencies
 RUN python -m venv venv
-# Activate the virtual environment
+
 # Activate the virtual environment
 RUN . venv/bin/activate
 # Install the dependencies into the virtual environment
