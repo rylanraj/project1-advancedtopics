@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - protocol: TCP
+      port: 3307
+      targetPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  selector:
+    app: mongodb
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enter-data
+spec:
+  selector:
+    app: enter-data
+  ports:
+    - protocol: TCP
+      port: 5002
+      targetPort: 5002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+spec:
+  selector:
+    app: analytics-service
+  ports:
+    - protocol: TCP
+      port: 5003
+      targetPort: 5003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: show-results
+spec:
+  selector:
+    app: show-results
+  ports:
+    - protocol: TCP
+      port: 5004
+      targetPort: 5004

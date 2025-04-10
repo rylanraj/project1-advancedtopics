@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:latest
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "root"
+            - name: MYSQL_DATABASE
+              value: "data_collection"
+            - name: MYSQL_USER
+              value: "user"
+            - name: MYSQL_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+            - name: db-sql
+              mountPath: /docker-entrypoint-initdb.d/db.sql
+              subPath: db.sql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-data
+        - name: db-sql
+          configMap:
+            name: db-sql-configmap
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+      volumes:
+        - name: mongo-data
+          persistentVolumeClaim:
+            claimName: mongo-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: costhm/auth_service:latest
+          ports:
+            - containerPort: 5001
+          env:
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_USER
+              value: "user"
+            - name: DB_PASSWORD
+              value: "password"
+            - name: DB_NAME
+              value: "data_collection"
+            - name: JWT_SECRET_KEY
+              value: "supersecretkey"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enter-data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enter-data
+  template:
+    metadata:
+      labels:
+        app: enter-data
+    spec:
+      containers:
+        - name: enter-data
+          image: costhm/enter_data:latest
+          ports:
+            - containerPort: 5002
+          env:
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_USER
+              value: "user"
+            - name: DB_PASSWORD
+              value: "password"
+            - name: DB_NAME
+              value: "data_collection"
+            - name: PORT
+              value: "5002"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: costhm/analytics_service:latest
+          ports:
+            - containerPort: 5003
+          env:
+            - name: MYSQL_HOST
+              value: "mysql"
+            - name: MYSQL_USER
+              value: "user"
+            - name: MYSQL_PASSWORD
+              value: "password"
+            - name: MYSQL_DB
+              value: "data_collection"
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/"
+            - name: PORT
+              value: "5003"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: show-results
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: show-results
+  template:
+    metadata:
+      labels:
+        app: show-results
+    spec:
+      containers:
+        - name: show-results
+          image: costhm/show_results:latest
+          ports:
+            - containerPort: 5004
+          env:
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/data_analytics"
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service:5001/protected"
+            - name: PORT
+              value: "5004"
