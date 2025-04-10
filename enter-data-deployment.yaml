@@ -32,7 +32,7 @@ spec:
               value: user
             - name: PORT
               value: "5002"
-          image: costhm/enter-data:latest
+          image: rylanraj/enter_data:latest
           name: enter-data
           ports:
             - containerPort: 5002
