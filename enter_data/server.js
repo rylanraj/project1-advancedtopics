@@ -18,8 +18,8 @@ app.set("views", path.join(__dirname, "views"));
 
 // Function to establish MySQL connection with retries
 const connectToDatabase = () => {
-  let connectionAttempts = 5;
-  const delay = 5000; // 5 seconds delay between attempts
+  let connectionAttempts = 20;
+  const delay = 30000; // 30 seconds delay between attempts
 
   const connect = () => {
     const db = mysql.createConnection({
