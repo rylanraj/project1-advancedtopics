@@ -27,18 +27,21 @@ spec:
           ports:
             - containerPort: 3306
           volumeMounts:
-            - name: mysql-data
-              mountPath: /var/lib/mysql
-            - name: db-sql
-              mountPath: /docker-entrypoint-initdb.d/db.sql
+            - mountPath: /var/lib/mysql
+              name: mysql-data
+            - mountPath: /docker-entrypoint-initdb.d/db.sql
+              name: mysql-cm1
               subPath: db.sql
       volumes:
         - name: mysql-data
           persistentVolumeClaim:
             claimName: mysql-data
-        - name: db-sql
-          configMap:
-            name: db-sql-configmap
+        - configMap:
+            items:
+              - key: db.sql
+                path: db.sql
+            name: mysql-cm1
+          name: mysql-cm1
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -83,7 +86,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: costhm/auth_service:latest
+          image: costhm/auth-service:latest
           ports:
             - containerPort: 5001
           env:
@@ -114,7 +117,7 @@ spec:
     spec:
       containers:
         - name: enter-data
-          image: costhm/enter_data:latest
+          image: costhm/enter-data:latest
           ports:
             - containerPort: 5002
           env:
@@ -145,7 +148,7 @@ spec:
     spec:
       containers:
         - name: analytics-service
-          image: costhm/analytics_service:latest
+          image: costhm/analytics-service:latest
           ports:
             - containerPort: 5003
           env:
@@ -178,7 +181,7 @@ spec:
     spec:
       containers:
         - name: show-results
-          image: costhm/show_results:latest
+          image: costhm/show-results:latest
           ports:
             - containerPort: 5004
           env:
