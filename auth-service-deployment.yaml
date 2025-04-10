@@ -32,7 +32,7 @@ spec:
               value: user
             - name: JWT_SECRET_KEY
               value: supersecretkey
-          image: costhm/auth-service:latest
+          image: rylanraj/auth_service:latest
           name: auth-service
           ports:
             - containerPort: 5001
