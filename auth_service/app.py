@@ -18,7 +18,7 @@ app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']  # Accept JWT from bot
 app.config['JWT_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Disable CSRF protection for now (optional)
 
-ENTER_DATA = "http://enter-data:5002"
+ENTER_DATA = "http://enter-data"
 
 jwt = JWTManager(app)
 
