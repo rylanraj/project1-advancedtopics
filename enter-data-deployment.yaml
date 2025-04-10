@@ -8,7 +8,7 @@ metadata:
     io.kompose.service: enter-data
   name: enter-data
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       io.kompose.service: enter-data
@@ -37,4 +37,11 @@ spec:
           ports:
             - containerPort: 5002
               protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
       restartPolicy: Always

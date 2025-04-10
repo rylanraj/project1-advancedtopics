@@ -14,3 +14,4 @@ spec:
       targetPort: 5001
   selector:
     io.kompose.service: auth-service
+  type: LoadBalancer
