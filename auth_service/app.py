@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, jwt_required, JWTManager, ge
 import pymysql
 import os
 import time
+import yaml
 from dotenv import load_dotenv
 from flask_cors import CORS
 
@@ -18,7 +19,7 @@ app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']  # Accept JWT from bot
 app.config['JWT_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Disable CSRF protection for now (optional)
 
-ENTER_DATA = "http://enter-data"
+ENTER_DATA = os.getenv("ENTER_DATA", "localhost:5002")
 
 jwt = JWTManager(app)
 

@@ -32,6 +32,8 @@ spec:
               value: user
             - name: JWT_SECRET_KEY
               value: supersecretkey
+            - name: ENTER_DATA
+              value: enter-data
           image: rylanraj/auth_service:latest
           name: auth-service
           ports:
