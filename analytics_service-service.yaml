@@ -14,3 +14,4 @@ spec:
       targetPort: 5003
   selector:
     io.kompose.service: analytics-service
+  type: LoadBalancer
