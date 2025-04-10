@@ -80,10 +80,10 @@ app.get("/", (req, res) => {
 });
 
 app.get('/results', async (req, res) => {
-    const verified = await verifyToken(req);
-    if (!verified) {
-        return res.status(401).json({ error: 'Invalid token' });
-    }
+    //const verified = await verifyToken(req);
+    //if (!verified) {
+    //    return res.status(401).json({ error: 'Invalid token' });
+    //}
     // Fetch the latest analytics data from the database
     const url = process.env.ANALYTICS_SERVICE_URL || 'http://analytics_service:5003/compute_analytics';
 
@@ -116,4 +116,4 @@ app.get('/results', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5004;
-app.listen(PORT, () => console.log(`Show Results Service running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`Show Results Service running on port ${PORT}`));
