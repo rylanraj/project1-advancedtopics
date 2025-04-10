@@ -4,21 +4,45 @@ const mongoose = require('mongoose');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const path = require("path");
+const cookieParser = require("cookie-parser");
+
 const app = express();
 
-const cookieParser = require("cookie-parser");
 app.use(cookieParser());  // Add this middleware
-
-//app.use(express.json());
 app.use(express.static(path.join(__dirname, "views")));
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo_db:27017/data_analytics';
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_service:5001/protected';
 
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+// Function to establish MongoDB connection with retries
+const connectToDatabase = () => {
+    let connectionAttempts = 5;
+    const delay = 5000; // 5 seconds delay between attempts
 
-// {'max': 50.0, 'min': 1.0, 'avg': 13.25, 'timestamp': '2025-02-24 04:25:41'} This is the format of the data in the database
+    const connect = () => {
+        mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+            .then(() => {
+                console.log("Connected to MongoDB");
+            })
+            .catch((err) => {
+                if (connectionAttempts > 0) {
+                    console.error("MongoDB connection failed:", err.message);
+                    console.log(`Retrying in ${delay / 1000} seconds...`);
+                    connectionAttempts--;
+                    setTimeout(connect, delay); // Retry after delay
+                } else {
+                    console.error("Failed to connect to MongoDB after several attempts.");
+                    process.exit(1); // Exit process if unable to connect after retries
+                }
+            });
+    };
 
+    connect();
+};
+
+connectToDatabase(); // Connect to MongoDB with retry logic
+
+// MongoDB Schema and Model
 const AnalyticsSchema = new mongoose.Schema({
     max: Number,
     min: Number,
@@ -27,6 +51,7 @@ const AnalyticsSchema = new mongoose.Schema({
 });
 const Analytics = mongoose.model('Analytics', AnalyticsSchema);
 
+// Function to verify JWT token
 async function verifyToken(req) {
     let token = req.cookies.token || req.cookies.access_token_cookie;  // Read from both cookies
     if (!token && req.headers.authorization) {
@@ -49,8 +74,6 @@ async function verifyToken(req) {
         return null;
     }
 }
-
-
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "views", "index.html"));

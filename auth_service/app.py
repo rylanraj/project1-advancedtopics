@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, redirect, make_respo
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 import pymysql
 import os
+import time
 from dotenv import load_dotenv
 from flask_cors import CORS
 
@@ -19,14 +20,31 @@ app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Disable CSRF protection for now
 
 jwt = JWTManager(app)
 
-# MySQL connection
-db = pymysql.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME"),
-    cursorclass=pymysql.cursors.DictCursor
-)
+# Function to establish MySQL connection with retries
+def get_db_connection():
+    db = None
+    retries = 5
+    delay = 5  # seconds between retries
+    for attempt in range(retries):
+        try:
+            db = pymysql.connect(
+                host=os.getenv("DB_HOST"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                database=os.getenv("DB_NAME"),
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            print("✅ MySQL connection established")
+            break
+        except pymysql.MySQLError as e:
+            print(f"❌ Attempt {attempt + 1} failed to connect to MySQL: {e}")
+            if attempt < retries - 1:
+                print(f"⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+            else:
+                print("🚨 MySQL connection failed after multiple attempts")
+                raise e
+    return db
 
 
 @app.route("/")
@@ -58,6 +76,7 @@ def register():
         return jsonify({"error": "Username and password required"}), 400
 
     try:
+        db = get_db_connection()
         with db.cursor() as cursor:
             cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
             db.commit()
@@ -82,21 +101,25 @@ def login():
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
 
-    with db.cursor() as cursor:
-        cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
-        user = cursor.fetchone()
+    try:
+        db = get_db_connection()
+        with db.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
+            user = cursor.fetchone()
 
-    if not user:
-        return jsonify({"error": "Invalid credentials"}), 401
+        if not user:
+            return jsonify({"error": "Invalid credentials"}), 401
 
-    print("User:", user)
-    print("User ID:", user.get("id"))
-    access_token = create_access_token(identity=str(user.get("id")))
+        print("User:", user)
+        print("User ID:", user.get("id"))
+        access_token = create_access_token(identity=str(user.get("id")))
 
-    response = jsonify({"token": access_token})  # Return token instead of redirecting
-    response.set_cookie("token", access_token, httponly=True, samesite="None", secure=False)
+        response = jsonify({"token": access_token})  # Return token instead of redirecting
+        response.set_cookie("token", access_token, httponly=True, samesite="None", secure=False)
 
-    return response
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/protected", methods=["GET"])
