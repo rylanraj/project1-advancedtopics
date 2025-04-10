@@ -18,6 +18,8 @@ app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']  # Accept JWT from bot
 app.config['JWT_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # Disable CSRF protection for now (optional)
 
+ENTER_DATA = "http://enter-data:5002"
+
 jwt = JWTManager(app)
 
 # Function to establish MySQL connection with retries
@@ -92,7 +94,7 @@ def register():
 @app.route("/login", methods=["POST", "GET"])
 def login():
     if request.method == "GET":
-        return render_template("login.html")
+        return render_template("login.html", enter_data=ENTER_DATA)
 
     data = request.json if request.is_json else request.form
     username = data.get("username")
