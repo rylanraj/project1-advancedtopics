@@ -40,7 +40,7 @@
 
             if (data.token) {
                 // Store token in a cookie
-                document.cookie = `token=${data.token}; path=/; SameSite=None; Secure`;
+                document.cookie = `token=${data.token}; path=/; SameSite=None;`;
 
                 // Hide the login form and change the title
                 document.getElementById("loginForm").style.display = "none";
