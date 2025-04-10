@@ -28,7 +28,7 @@ spec:
               value: mongodb://mongodb:27017/data_analytics
             - name: PORT
               value: "5004"
-          image: costhm/show-results:latest
+          image: rylanraj/show_results:latest
           name: show-results
           ports:
             - containerPort: 5004
