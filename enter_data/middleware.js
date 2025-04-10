@@ -2,7 +2,7 @@ const axios = require("axios");
 
 async function authenticateToken(req, res, next) {
     let token = req.cookies.token || req.cookies.access_token_cookie || req.query.token;
-    const AUTH_SERVICE_URL = "http://auth-service:5001";
+    const AUTH_SERVICE_URL = "http://afd29919d80da4b4c9d92a6219b3f75d-230902164.us-west-2.elb.amazonaws.com:5001";
     console.log(AUTH_SERVICE_URL);
 
     console.log("Authenticating user... Token received:", token);
