@@ -3,7 +3,6 @@ from flask_jwt_extended import create_access_token, jwt_required, JWTManager, ge
 import pymysql
 import os
 import time
-import yaml
 from dotenv import load_dotenv
 from flask_cors import CORS
 
