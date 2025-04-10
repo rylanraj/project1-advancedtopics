@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Prompt for the authentication service URL
 read -p "Enter the AUTH_URL: " AUTH_URL
 
-# Prompt for the number of users to test
-read -p "Enter the number of users to test: " USER_COUNT
+i=1 # counter
 
-for (( i=1; i<=USER_COUNT; i++ ))
+while true
 do
   echo "[$i] Registering user user$i..."
 
@@ -24,6 +22,7 @@ do
 
   if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
     echo "❌ Failed to retrieve token for user$i"
+    ((i++))
     continue
   fi
 
@@ -39,6 +38,7 @@ do
     echo "❌ Protected route access failed for user$i: $PROTECTED_RESPONSE"
   fi
 
+  ((i++))
 done
 
 echo "✅ Load test completed."
